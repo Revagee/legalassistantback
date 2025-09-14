@@ -15,8 +15,12 @@ class User(BaseEntity):
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    email_verification_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
-    email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(nullable=True, default=None)
+    email_verification_token: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True, default=None
+    )
+    email_verification_expires_at: Mapped[Optional[datetime]] = mapped_column(
+        nullable=True, default=None
+    )
 
     @classmethod
     async def get_by_email(cls, email: str, session: AsyncSession) -> Optional["User"]:
@@ -32,10 +36,15 @@ class User(BaseEntity):
         return await session.get(cls, user_id)
 
     @classmethod
-    async def get_by_verification_token(cls, token: str, session: AsyncSession) -> Optional["User"]:
+    async def get_by_verification_token(
+        cls, token: str, session: AsyncSession
+    ) -> Optional["User"]:
         """Get user by email verification token."""
         query = select(cls).where(
-            and_(cls.email_verification_token == token, cls.email_verification_expires_at > datetime.now(UTC))
+            and_(
+                cls.email_verification_token == token,
+                cls.email_verification_expires_at > datetime.now(UTC),
+            )
         )
         result = await session.execute(query)
         return result.scalar_one_or_none()

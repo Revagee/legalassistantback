@@ -15,11 +15,11 @@ class EmailConfig:
     SMTP_PORT = int(os.getenv("MAILGUN_SMTP_PORT", "587"))
     SMTP_USERNAME = os.getenv("MAILGUN_SMTP_LOGIN", "")
     SMTP_PASSWORD = os.getenv("MAILGUN_SMTP_PASSWORD", "")
-    FROM_EMAIL = "noreply@watchnext.ai"
-    FROM_NAME = "WatchNext"
+    FROM_EMAIL = "noreply@mail.pravohelper.com"
+    FROM_NAME = "Pravo Helper"
 
-    API_BASE_URL = os.getenv("API_BASE_URL", "https://api.watchnext.ai")
-    WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://watchnext.ai")
+    API_BASE_URL = os.getenv("API_BASE_URL", "https://api.pravohelper.com")
+    WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://pravohelper.com")
     USE_MOCK_EMAIL = os.getenv("USE_MOCK_EMAIL", "true").lower() == "true"
 
 
@@ -29,14 +29,22 @@ class EmailService:
     def __init__(self):
         self.config = EmailConfig()
 
-    async def send_email(self, to_email: str, subject: str, html_body: str, text_body: Optional[str] = None) -> bool:
+    async def send_email(
+        self,
+        to_email: str,
+        subject: str,
+        html_body: str,
+        text_body: Optional[str] = None,
+    ) -> bool:
         """Send an email."""
         if self.config.USE_MOCK_EMAIL:
             return await self._send_mock_email(to_email, subject, html_body)
         else:
             return await self._send_smtp_email(to_email, subject, html_body, text_body)
 
-    async def _send_mock_email(self, to_email: str, subject: str, html_body: str) -> bool:
+    async def _send_mock_email(
+        self, to_email: str, subject: str, html_body: str
+    ) -> bool:
         """Mock email sending for development."""
         logger.info("🔔 MOCK EMAIL SENT 📧")
         logger.info(f"To: {to_email}")
@@ -46,7 +54,11 @@ class EmailService:
         return True
 
     async def _send_smtp_email(
-        self, to_email: str, subject: str, html_body: str, text_body: Optional[str] = None
+        self,
+        to_email: str,
+        subject: str,
+        html_body: str,
+        text_body: Optional[str] = None,
     ) -> bool:
         """Send email via SMTP."""
         # Create message
@@ -72,11 +84,15 @@ class EmailService:
 
         return True
 
-    async def send_verification_email(self, to_email: str, verification_token: str) -> bool:
+    async def send_verification_email(
+        self, to_email: str, verification_token: str
+    ) -> bool:
         """Send email verification email."""
-        verification_url = f"{self.config.WEB_BASE_URL}/verify-email?token={verification_token}"
+        verification_url = (
+            f"{self.config.WEB_BASE_URL}/verify-email?token={verification_token}"
+        )
 
-        subject = "Verify your WatchNext account"
+        subject = "Verify your Pravo Helper account"
 
         html_body = f"""
         <!DOCTYPE html>
@@ -88,12 +104,12 @@ class EmailService:
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #6366f1;">WatchNext</h1>
+                    <h1 style="color: #6366f1;">Pravo Helper</h1>
                 </div>
 
                 <h2>Verify Your Email Address</h2>
 
-                <p>Thank you for creating a WatchNext account! To complete your registration, please verify your email address by clicking the button below:</p>
+                <p>Thank you for creating a Pravo Helper account! To complete your registration, please verify your email address by clicking the button below:</p>
 
                 <div style="text-align: center; margin: 30px 0;">
                     <a href="{verification_url}"
@@ -109,7 +125,7 @@ class EmailService:
                 <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
 
                 <p style="font-size: 14px; color: #666;">
-                    If you didn't create a WatchNext account, you can safely ignore this email.
+                    If you didn't create a Pravo Helper account, you can safely ignore this email.
                 </p>
             </div>
         </body>
@@ -117,15 +133,15 @@ class EmailService:
         """
 
         text_body = f"""
-        Verify Your WatchNext Account
+        Verify Your Pravo Helper Account
 
-        Thank you for creating a WatchNext account! To complete your registration, please verify your email address by visiting this link:
+        Thank you for creating a Pravo Helper account! To complete your registration, please verify your email address by visiting this link:
 
         {verification_url}
 
         This link will expire in 24 hours.
 
-        If you didn't create a WatchNext account, you can safely ignore this email.
+        If you didn't create a Pravo Helper account, you can safely ignore this email.
         """
 
         return await self.send_email(to_email, subject, html_body, text_body)
@@ -134,7 +150,7 @@ class EmailService:
         """Send password reset email."""
         reset_url = f"{self.config.WEB_BASE_URL}/reset-password?token={reset_token}"
 
-        subject = "Reset your WatchNext password"
+        subject = "Reset your Pravo Helper password"
 
         html_body = f"""
         <!DOCTYPE html>
@@ -146,12 +162,12 @@ class EmailService:
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #6366f1;">WatchNext</h1>
+                    <h1 style="color: #6366f1;">Pravo Helper</h1>
                 </div>
 
                 <h2>Reset Your Password</h2>
 
-                <p>We received a request to reset your WatchNext account password. Click the button below to create a new password:</p>
+                <p>We received a request to reset your Pravo Helper account password. Click the button below to create a new password:</p>
 
                 <div style="text-align: center; margin: 30px 0;">
                     <a href="{reset_url}"
@@ -176,9 +192,9 @@ class EmailService:
         """
 
         text_body = f"""
-        Reset Your WatchNext Password
+        Reset Your Pravo Helper Password
 
-        We received a request to reset your WatchNext account password. Visit this link to create a new password:
+        We received a request to reset your Pravo Helper account password. Visit this link to create a new password:
 
         {reset_url}
 

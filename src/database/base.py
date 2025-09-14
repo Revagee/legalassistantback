@@ -29,13 +29,17 @@ class BaseWithTimestamps(Base):
         default_factory=lambda: datetime.now(UTC),
         insert_default=func.now(),
     )
-    updated_at: Mapped[datetime | None] = mapped_column(init=False, default=None, onupdate=func.now())
+    updated_at: Mapped[datetime | None] = mapped_column(
+        init=False, default=None, onupdate=func.now()
+    )
 
 
 class BaseEntity(BaseWithTimestamps):
     __abstract__ = True
 
-    id: Mapped[UUID] = mapped_column(init=False, primary_key=True, default_factory=uuid4)
+    id: Mapped[UUID] = mapped_column(
+        init=False, primary_key=True, default_factory=uuid4
+    )
 
 
 class BaseEntityWithIntId(BaseWithTimestamps):

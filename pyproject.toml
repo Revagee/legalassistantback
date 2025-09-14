@@ -5,10 +5,22 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "alembic>=1.16.5",
+    "asyncpg>=0.30.0",
     "bcrypt>=4.3.0",
+    "email-validator>=2.3.0",
     "fastapi>=0.116.1",
+    "greenlet>=3.2.4",
+    "gunicorn>=23.0.0",
+    "langchain-google-genai>=2.1.10",
     "langgraph>=0.6.7",
+    "langgraph-checkpoint-postgres>=2.0.23",
+    "langmem>=0.0.29",
+    "pydantic>=2.11.9",
+    "pydantic-settings>=2.10.1",
     "pyjwt>=2.10.1",
     "python-dotenv>=1.1.1",
+    "redis>=6.4.0",
     "sqlalchemy>=2.0.43",
+    "uvicorn>=0.35.0",
 ]

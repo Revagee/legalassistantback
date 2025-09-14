@@ -8,7 +8,9 @@ from pydantic import BaseModel, EmailStr, Field
 # Request Models
 class UserRegisterRequest(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
+    password: str = Field(
+        ..., min_length=8, description="Password must be at least 8 characters"
+    )
 
 
 class UserLoginRequest(BaseModel):
@@ -30,7 +32,9 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     token: str
-    new_password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
+    new_password: str = Field(
+        ..., min_length=8, description="Password must be at least 8 characters"
+    )
 
 
 class VerifyEmailRequest(BaseModel):
@@ -43,7 +47,9 @@ class ResendVerificationRequest(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     current_password: str
-    new_password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
+    new_password: str = Field(
+        ..., min_length=8, description="Password must be at least 8 characters"
+    )
 
 
 # Response Models
@@ -79,11 +85,6 @@ class MessageResponse(BaseModel):
 class RegisterResponse(BaseModel):
     user: UserResponse
     message: str
-
-
-class CleanupResponse(BaseModel):
-    message: str
-    deleted_count: int
 
 
 # Error Models

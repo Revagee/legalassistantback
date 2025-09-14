@@ -11,15 +11,20 @@ from src.api.v1.api import api_router  # noqa: E402
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Legal Boss API",
+    title="Pravo Helper API",
     version="1.0.0",
-    docs_url=None,
-    redoc_url=None,
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Specify your allowed origins
+    allow_origins=[
+        "localhost:5173",
+        "http://localhost:5173",
+        "http://pravohelper.com",
+        "https://pravohelper.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,7 +33,10 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"status": "online", "message": "WatchNext API is running", "version": "1.0.0"}
+    return {
+        "status": "online",
+        "message": "Pravo Helper API is running",
+    }
 
 
 app.include_router(api_router, prefix="")

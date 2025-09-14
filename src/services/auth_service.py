@@ -16,11 +16,15 @@ from src.database.users import User
 class AuthConfig:
     """Authentication configuration."""
 
-    SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this-in-production")
+    SECRET_KEY = os.getenv(
+        "JWT_SECRET_KEY", "your-secret-key-change-this-in-production"
+    )
     ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
     REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "30"))
-    EMAIL_VERIFICATION_EXPIRE_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24"))
+    EMAIL_VERIFICATION_EXPIRE_HOURS = int(
+        os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24")
+    )
     PASSWORD_RESET_EXPIRE_HOURS = int(os.getenv("PASSWORD_RESET_EXPIRE_HOURS", "24"))
 
 
@@ -58,9 +62,19 @@ class TokenService:
     @staticmethod
     def create_access_token(user_id: UUID, email: str) -> tuple[str, datetime]:
         """Create a JWT access token."""
-        expire = datetime.now(UTC) + timedelta(minutes=AuthConfig.ACCESS_TOKEN_EXPIRE_MINUTES)
-        to_encode = {"sub": str(user_id), "email": email, "exp": expire, "iat": datetime.now(UTC), "type": "access"}
-        encoded_jwt = jwt.encode(to_encode, AuthConfig.SECRET_KEY, algorithm=AuthConfig.ALGORITHM)
+        expire = datetime.now(UTC) + timedelta(
+            minutes=AuthConfig.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+        to_encode = {
+            "sub": str(user_id),
+            "email": email,
+            "exp": expire,
+            "iat": datetime.now(UTC),
+            "type": "access",
+        }
+        encoded_jwt = jwt.encode(
+            to_encode, AuthConfig.SECRET_KEY, algorithm=AuthConfig.ALGORITHM
+        )
         return encoded_jwt, expire
 
     @staticmethod
@@ -72,14 +86,23 @@ class TokenService:
     def verify_access_token(token: str) -> dict:
         """Verify and decode a JWT access token."""
         try:
-            payload = jwt.decode(token, AuthConfig.SECRET_KEY, algorithms=[AuthConfig.ALGORITHM])
+            payload = jwt.decode(
+                token, AuthConfig.SECRET_KEY, algorithms=[AuthConfig.ALGORITHM]
+            )
             if payload.get("type") != "access":
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token type",
+                )
             return payload
         except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
+            )
         except jwt.PyJWTError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )
 
     @staticmethod
     def hash_token(token: str) -> str:
@@ -99,14 +122,18 @@ class EmailTokenService:
     def create_verification_token(user_id: UUID) -> tuple[str, datetime]:
         """Create an email verification token."""
         token = EmailTokenService.generate_secure_token()
-        expire = datetime.now(UTC) + timedelta(hours=AuthConfig.EMAIL_VERIFICATION_EXPIRE_HOURS)
+        expire = datetime.now(UTC) + timedelta(
+            hours=AuthConfig.EMAIL_VERIFICATION_EXPIRE_HOURS
+        )
         return token, expire
 
     @staticmethod
     def create_password_reset_token(user_id: UUID) -> tuple[str, datetime]:
         """Create a password reset token."""
         token = EmailTokenService.generate_secure_token()
-        expire = datetime.now(UTC) + timedelta(hours=AuthConfig.PASSWORD_RESET_EXPIRE_HOURS)
+        expire = datetime.now(UTC) + timedelta(
+            hours=AuthConfig.PASSWORD_RESET_EXPIRE_HOURS
+        )
         return token, expire
 
 
@@ -118,7 +145,9 @@ class AuthService:
         self.token_service = TokenService()
         self.email_token_service = EmailTokenService()
 
-    async def authenticate_user(self, email: str, password: str, session) -> Optional[User]:
+    async def authenticate_user(
+        self, email: str, password: str, session
+    ) -> Optional[User]:
         """Authenticate a user with email and password."""
         user = await User.get_by_email(email, session)
         if not user:
@@ -129,10 +158,14 @@ class AuthService:
 
         return user
 
-    async def create_user_tokens(self, user: User, session) -> tuple[str, str, datetime]:
+    async def create_user_tokens(
+        self, user: User, session
+    ) -> tuple[str, str, datetime]:
         """Create access and refresh tokens for a user."""
         # Create access token
-        access_token, expire = self.token_service.create_access_token(user.id, user.email)
+        access_token, expire = self.token_service.create_access_token(
+            user.id, user.email
+        )
 
         # Create refresh token
         refresh_token = self.token_service.create_refresh_token()

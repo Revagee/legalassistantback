@@ -12,14 +12,20 @@ from src.database.base import BaseEntity
 class PasswordReset(BaseEntity):
     __tablename__ = "password_resets"
 
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     token_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(nullable=False)
     used_at: Mapped[Optional[datetime]] = mapped_column(nullable=True, default=None)
 
     @classmethod
     async def create_reset_token(
-        cls, user_id: UUID, token_hash: str, session: AsyncSession, expires_in_hours: int = 24
+        cls,
+        user_id: UUID,
+        token_hash: str,
+        session: AsyncSession,
+        expires_in_hours: int = 24,
     ) -> "PasswordReset":
         """Create a new password reset token."""
         expires_at = datetime.now(UTC) + timedelta(hours=expires_in_hours)
@@ -29,10 +35,16 @@ class PasswordReset(BaseEntity):
         return reset_token
 
     @classmethod
-    async def get_valid_token(cls, token_hash: str, session: AsyncSession) -> Optional["PasswordReset"]:
+    async def get_valid_token(
+        cls, token_hash: str, session: AsyncSession
+    ) -> Optional["PasswordReset"]:
         """Get a valid (unused and not expired) password reset token."""
         query = select(cls).where(
-            and_(cls.token_hash == token_hash, cls.expires_at > datetime.now(UTC), cls.used_at.is_(None))
+            and_(
+                cls.token_hash == token_hash,
+                cls.expires_at > datetime.now(UTC),
+                cls.used_at.is_(None),
+            )
         )
         result = await session.execute(query)
         return result.scalar_one_or_none()
