@@ -1,12 +1,9 @@
-from datetime import datetime
-from typing import Optional
-from uuid import UUID
-
 from pydantic import BaseModel, EmailStr, Field
 
 
 # Request Models
 class UserRegisterRequest(BaseModel):
+    name: str
     email: EmailStr
     password: str = Field(
         ..., min_length=8, description="Password must be at least 8 characters"
@@ -23,7 +20,7 @@ class RefreshTokenRequest(BaseModel):
 
 
 class LogoutRequest(BaseModel):
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -54,28 +51,17 @@ class ChangePasswordRequest(BaseModel):
 
 # Response Models
 class UserResponse(BaseModel):
-    id: UUID
-    email: str
-    email_verified: bool
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
+    name: str
+    email: EmailStr
 
 
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
-    expires_in: int
-    user: UserResponse
 
 
 class RefreshTokenResponse(BaseModel):
     access_token: str
-    token_type: str = "bearer"
-    expires_in: int
 
 
 class MessageResponse(BaseModel):
@@ -83,7 +69,6 @@ class MessageResponse(BaseModel):
 
 
 class RegisterResponse(BaseModel):
-    user: UserResponse
     message: str
 
 

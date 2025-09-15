@@ -26,7 +26,7 @@ async def get_current_user(
     if not user_id_str:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token: missing user ID",
+            detail="Недійсний токен: відсутній ідентифікатор користувача",
         )
 
     try:
@@ -34,7 +34,7 @@ async def get_current_user(
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token: invalid user ID format",
+            detail="Недійсний токен: неправильний формат ідентифікатора користувача",
         )
 
     # Get user from database
@@ -43,12 +43,12 @@ async def get_current_user(
         user = await User.get_by_id(user_id, session)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Користувача не знайдено"
             )
 
         if not user.email_verified:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Email not verified"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Електронну адресу не підтверджено"
             )
 
     return user
@@ -82,7 +82,7 @@ async def get_user_id_from_token(
     if not user_id_str:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token: missing user ID",
+            detail="Недійсний токен: відсутній ідентифікатор користувача",
         )
 
     try:
@@ -90,5 +90,5 @@ async def get_user_id_from_token(
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token: invalid user ID format",
+            detail="Недійсний токен: неправильний формат ідентифікатора користувача",
         )

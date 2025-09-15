@@ -34,7 +34,7 @@ async def register(user_data: schema.UserRegisterRequest):
         existing_user = await User.get_by_email(user_data.email.strip(), session)
         if existing_user:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+                status_code=status.HTTP_409_CONFLICT, detail="Електронна адреса вже зареєстрована"
             )
 
         # Validate password strength
@@ -57,6 +57,7 @@ async def register(user_data: schema.UserRegisterRequest):
         # Create user
         user = User(
             email=user_data.email.strip(),
+            name=user_data.name,
             password_hash=password_hash,
             email_verification_token=verification_token,
             email_verification_expires_at=expires_at,
@@ -68,7 +69,7 @@ async def register(user_data: schema.UserRegisterRequest):
             await session.refresh(user)
         except IntegrityError:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+                status_code=status.HTTP_409_CONFLICT, detail="Електронна адреса вже зареєстрована"
             )
 
         # Send verification email
@@ -79,12 +80,7 @@ async def register(user_data: schema.UserRegisterRequest):
         if not email_sent:
             logger.warning(f"Failed to send verification email to {user_data.email}")
 
-        user_response = schema.UserResponse.model_validate(user)
-
-        return schema.RegisterResponse(
-            user=user_response,
-            message="Registration successful. Please check your email and verify your account.",
-        )
+        return schema.RegisterResponse(message="Реєстрація успішна. Перевірте електронну пошту та підтвердіть акаунт.",)
 
 
 @router.post("/login", response_model=schema.TokenResponse)
@@ -99,14 +95,14 @@ async def login(user_data: schema.UserLoginRequest):
         )
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Невірні облікові дані"
             )
 
         # Check if email is verified
         if not user.email_verified:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Email not verified. Please check your email and verify your account.",
+                detail="Електронну адресу не підтверджено. Перевірте пошту та підтвердіть акаунт.",
             )
 
         # Create tokens
@@ -114,7 +110,7 @@ async def login(user_data: schema.UserLoginRequest):
             user, session
         )
 
-        user_response = schema.UserResponse.model_validate(user)
+        user_response = schema.UserResponse(name=user.name, email=user.email)
 
         return schema.TokenResponse(
             access_token=access_token,
@@ -143,14 +139,14 @@ async def refresh_token(token_data: schema.RefreshTokenRequest):
         if not refresh_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired refresh token",
+                detail="Недійсний або прострочений токен оновлення",
             )
 
         # Get user
         user = await User.get_by_id(refresh_token.user_id, session)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Користувача не знайдено"
             )
 
         # Create new access token
@@ -184,6 +180,7 @@ async def logout(
             await RefreshToken.revoke_all_user_tokens(current_user.id, session)
 
         return schema.MessageResponse(message="Logged out successfully")
+        
 
 
 @router.post("/forgot-password", response_model=schema.MessageResponse)
@@ -197,7 +194,7 @@ async def forgot_password(request_data: schema.ForgotPasswordRequest):
         if not user:
             # Don't reveal if email exists or not
             return schema.MessageResponse(
-                message="If the email exists, a password reset link has been sent."
+                message="Якщо електронна адреса існує, посилання для скидання пароля надіслано."
             )
 
         # Invalidate any existing password reset tokens
@@ -227,7 +224,7 @@ async def forgot_password(request_data: schema.ForgotPasswordRequest):
             )
 
         return schema.MessageResponse(
-            message="If the email exists, a password reset link has been sent."
+            message="Якщо електронна адреса існує, посилання для скидання пароля надіслано."
         )
 
 
@@ -254,14 +251,14 @@ async def reset_password(request_data: schema.ResetPasswordRequest):
         if not password_reset:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid or expired reset token",
+                detail="Недійсний або прострочений токен для скидання пароля",
             )
 
         # Get user
         user = await User.get_by_id(password_reset.user_id, session)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="User not found"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Користувача не знайдено"
             )
 
         # Update password
@@ -277,7 +274,7 @@ async def reset_password(request_data: schema.ResetPasswordRequest):
 
         await session.commit()
 
-        return schema.MessageResponse(message="Password reset successful")
+        return schema.MessageResponse(message="Пароль успішно змінено")
 
 
 @router.get("/verify-email", response_model=schema.MessageResponse)
@@ -291,13 +288,13 @@ async def verify_email(token: str):
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Your verification token has expired",
+                detail="Строк дії токена підтвердження минув",
             )
 
         # Verify email
         await user.verify_email(session)
 
-        return schema.MessageResponse(message="Email verified successfully")
+        return schema.MessageResponse(message="Електронну адресу успішно підтверджено")
 
 
 @router.post("/resend-verification", response_model=schema.MessageResponse)
@@ -311,14 +308,14 @@ async def resend_verification_email(request_data: schema.ResendVerificationReque
         if not user:
             # Don't reveal if email exists or not
             return schema.MessageResponse(
-                message="If the email exists, a verification email has been sent."
+                message="Якщо електронна адреса існує, лист для підтвердження надіслано."
             )
 
         # Check if email is already verified
         if user.email_verified:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email is already verified",
+                detail="Електронну адресу вже підтверджено",
             )
 
         # Generate new verification token
@@ -342,13 +339,13 @@ async def resend_verification_email(request_data: schema.ResendVerificationReque
                 f"Failed to resend verification email to {request_data.email}"
             )
 
-        return schema.MessageResponse(message="Verification email sent successfully")
+        return schema.MessageResponse(message="Лист для підтвердження надіслано успішно")
 
 
 @router.get("/me", response_model=schema.UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Get current user information."""
-    return schema.UserResponse.model_validate(current_user)
+    return schema.UserResponse(name=current_user.name, email=current_user.email)
 
 
 @router.post("/change-password", response_model=schema.MessageResponse)
@@ -387,7 +384,7 @@ async def change_password(
         # Revoke all refresh tokens for security
         await RefreshToken.revoke_all_user_tokens(current_user.id, session)
 
-        return schema.MessageResponse(message="Password changed successfully")
+        return schema.MessageResponse(message="Пароль успішно змінено")
 
 
 @router.delete("/delete-account", response_model=schema.MessageResponse)
@@ -403,4 +400,4 @@ async def delete_account(current_user: User = Depends(get_current_user)):
         await session.delete(current_user)
         await session.commit()
 
-        return schema.MessageResponse(message="Account deleted successfully")
+        return schema.MessageResponse(message="Акаунт успішно видалено")

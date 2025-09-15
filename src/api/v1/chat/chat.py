@@ -2,7 +2,6 @@ import json
 import os
 import logging
 from datetime import datetime
-from enum import Enum
 from functools import partial
 from typing import AsyncGenerator
 from uuid import uuid4, UUID
@@ -12,8 +11,10 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessageChunk, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from src.database.utils import get_session
 from src.middleware.auth_middleware import get_user_id_from_token
 from src.ai.config import get_llm
+from sqlalchemy import select, func, cast, Integer
 
 # from database.checkpoints import Checkpoint
 from src.ai.agent import LegalAgent
@@ -24,7 +25,6 @@ from fastapi.background import BackgroundTasks
 from src.cache.redis import get_redis
 
 router = APIRouter()
-tags: list[str | Enum] = ["Chat"]
 logger = logging.getLogger(__name__)
 
 
@@ -38,6 +38,22 @@ def _empty_sse_response() -> StreamingResponse:
             "X-Accel-Buffering": "no",
         },
     )
+
+
+async def generate_chat_name(message: str) -> str:
+    llm = get_llm("chat_name")
+    chat_service = ChatService(llm)
+    async with get_session() as session:
+        checkpoint = await session.scalar(
+            select(Checkpoint)
+            .where(
+                Checkpoint.user_id == user_id,
+                Checkpoint.thread_id == thread_id,
+            )
+            .limit(1)
+        )
+
+        chat_name = await chat_service.generate_chat_name(request.message)
 
 
 async def generate_response(
@@ -73,30 +89,19 @@ async def generate_response(
         await r.set(f"{stream_id}:status", "completed")
 
 
-@router.post("/message", tags=tags, status_code=status.HTTP_200_OK)
+@router.post("/message", status_code=status.HTTP_200_OK)
 async def chat_message(
     request: ChatRequest,
     user_id: UUID = Depends(get_user_id_from_token),
-    chat_service: ChatService = Depends(get_chat_service),
     llm: BaseChatModel = Depends(partial(get_llm, "communication_agent")),
     *,
     background_tasks: BackgroundTasks,
 ) -> None:
     config = get_config(thread_id=request.thread_id, user_id=user_id)
     config["configurable"]["last_activity_time"] = datetime.now().isoformat()
-    # async with get_session() as session:
-    #     checkpoint = await session.scalar(
-    #         select(Checkpoint)
-    #         .where(
-    #             cast(Checkpoint.metadata_["agent_id"].astext, Integer) == AgentsIDs.COMMUNICATION_AGENT.value,
-    #             Checkpoint.thread_id == request.thread_id,
-    #         )
-    #         .order_by(func.coalesce(cast(Checkpoint.metadata_["step"].astext, Integer), 0).desc())
-    #         .limit(1)
-    #     )
 
-    #     if not checkpoint or not checkpoint.metadata_.get("chat_name"):
-    #       config["configurable"]["chat_name"] = await chat_service.generate_chat_name(request.message)
+    background_tasks.add_task(generate_chat_name, request.message)
+
 
     r = get_redis()
 
@@ -135,17 +140,11 @@ async def stream_tokens(thread_id: UUID, request: Request):
 
     async def get_chunks() -> AsyncGenerator[str, None]:
         while True:
-            if await request.is_disconnected():
-                logger.info("Client disconnected")
-                break
-
-            # Read unseen messages (">" means new only)
             messages = await r.xreadgroup(
                 groupname=group_name,
                 consumername="0",
                 streams={STREAM_ID: ">"},
                 count=None,
-                # block=3000,  # block 3s
             )
 
             if messages:
@@ -154,6 +153,9 @@ async def stream_tokens(thread_id: UUID, request: Request):
                         yield f"data: {json.dumps(data)}\n\n"
 
                         await r.xack(STREAM_ID, group_name, msg_id)
+
+            if:
+                break
 
     return StreamingResponse(
         get_chunks(),

@@ -2,7 +2,6 @@ import hashlib
 import os
 import secrets
 from datetime import UTC, datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 import bcrypt
@@ -92,16 +91,16 @@ class TokenService:
             if payload.get("type") != "access":
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid token type",
+                    detail="Недійсний тип токена",
                 )
             return payload
         except jwt.ExpiredSignatureError:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Термін дії токена минув"
             )
         except jwt.PyJWTError:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Недійсний токен"
             )
 
     @staticmethod
@@ -147,7 +146,7 @@ class AuthService:
 
     async def authenticate_user(
         self, email: str, password: str, session
-    ) -> Optional[User]:
+    ) -> User | None:
         """Authenticate a user with email and password."""
         user = await User.get_by_email(email, session)
         if not user:
@@ -183,6 +182,6 @@ class AuthService:
     def get_password_requirements_error(self) -> str:
         """Get password requirements error message."""
         return (
-            "Password must be at least 8 characters long and contain "
-            "at least one uppercase letter, one lowercase letter, and one digit."
+            "Пароль має містити щонайменше 8 символів і щонайменше одну "
+            "велику літеру, одну малу літеру та одну цифру."
         )
