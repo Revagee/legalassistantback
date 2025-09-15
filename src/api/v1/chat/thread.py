@@ -9,11 +9,14 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 from src.ai.config import get_llm
-from src.database.utils import get_session
-# from src.database.utils import Checkpoint
-from src.ai.agent import LegalAgent
-from src.api.v1.chat.utils import get_config
+from src.middleware.auth_middleware import get_current_user
+from src.database.users import User
+from src.database.session import get_session
+from src.database.checkpointer import Checkpoint
+from src.ai.agent import GraphBuilder
 from src.schema.chat import ThreadMessagesItemSchema
+from sqlalchemy import select
+from fastapi import Response
 
 router = APIRouter()
 
@@ -29,14 +32,14 @@ class UpdateThreadNameRequest(BaseModel):
 )
 async def get_thread(
     thread_id: UUID = Query(..., description="The thread ID to retrieve"),
-    chat_name: str = "New chat",
-    llm: BaseChatModel = Depends(partial(get_llm, "communication_agent")),
+    llm: BaseChatModel = Depends(partial(get_llm, "chat")),
+    user: User = Depends(get_current_user),
 ):
-    config = get_config(thread_id)
+    config = {"configurable": {"thread_id": str(thread_id), "user_id": str(user.id)}}
     async with AsyncPostgresSaver.from_conn_string(
-        conn_string=os.getenv("DATABASE_URL", ""),
+        conn_string=os.getenv("DATABASE_URI", ""),
     ) as checkpointer:
-        graph = LegalAgent(
+        graph = GraphBuilder(
             llm=llm,
             checkpointer=checkpointer,
             store=None,
@@ -69,9 +72,10 @@ async def get_thread(
 @router.delete("", description="Delete a current thread.")
 async def delete_thread(
     thread_id: UUID = Query(..., description="The thread ID to delete"),
+    user: User = Depends(get_current_user),
 ):
     async with AsyncPostgresSaver.from_conn_string(
-        conn_string=os.getenv("DATABASE_URL", ""),
+        conn_string=os.getenv("DATABASE_URI", ""),
     ) as checkpointer:
         await checkpointer.adelete_thread(thread_id)
     return []
@@ -81,23 +85,20 @@ async def delete_thread(
 async def update_thread_name(
     request: UpdateThreadNameRequest,
     thread_id: UUID = Query(..., description="The thread ID to update"),
+    user: User = Depends(get_current_user),
 ):
-    # async with get_session() as session:
-    #     checkpoints = await session.scalars(
-    #         select(Checkpoint).where(
-    #             cast(Checkpoint.metadata_["agent_id"].astext, Integer)
-    #             == AgentsIDs.COMMUNICATION_AGENT.value,
-    #             Checkpoint.thread_id == str(thread_id),
-    #         )
-    #     )
+    async with get_session() as session:
+        checkpoints = await session.scalars(
+            select(Checkpoint).where(
+                Checkpoint.thread_id == str(thread_id),
+            )
+        )
 
-    #     updated = 0
-    #     for checkpoint in checkpoints:
-    #         metadata = dict(checkpoint.metadata_ or {})
-    #         metadata["chat_name"] = request.chat_name
-    #         checkpoint.metadata_ = metadata
-    #         updated += 1
+        for checkpoint in checkpoints:
+            metadata = dict(checkpoint.metadata_ or {})
+            metadata["chat_name"] = request.chat_name
+            checkpoint.metadata_ = metadata
 
-    #     await session.commit()
+        await session.commit()
 
-    return {"updated": 0, "chat_name": request.chat_name}
+    return Response(status_code=204)

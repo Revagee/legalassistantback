@@ -1,8 +1,10 @@
 from langgraph.prebuilt import create_react_agent
 from langmem.short_term import SummarizationNode
+from src.ai.tools import web_search_tool
+from src.ai.prompt import SYSTEM_PROMPT
 
 
-class LegalAgent:
+class GraphBuilder:
     def __init__(self, llm, store, checkpointer):
         self.llm = llm
         self.store = store
@@ -19,8 +21,8 @@ class LegalAgent:
         )
         agent = create_react_agent(
             model=self.llm,
-            # tools=tools,
-            # prompt=prompt,
+            tools=[web_search_tool],
+            prompt=SYSTEM_PROMPT,
             pre_model_hook=summarization_node,
             store=self.store,
             checkpointer=self.checkpointer,

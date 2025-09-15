@@ -18,7 +18,6 @@ class EmailConfig:
     FROM_EMAIL = "noreply@mail.pravohelper.com"
     FROM_NAME = "Pravo Helper"
 
-    API_BASE_URL = os.getenv("API_BASE_URL", "https://api.pravohelper.com")
     WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://pravohelper.com")
     USE_MOCK_EMAIL = os.getenv("USE_MOCK_EMAIL", "true").lower() == "true"
 

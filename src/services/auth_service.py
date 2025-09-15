@@ -96,7 +96,8 @@ class TokenService:
             return payload
         except jwt.ExpiredSignatureError:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Термін дії токена минув"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Термін дії токена минув",
             )
         except jwt.PyJWTError:
             raise HTTPException(

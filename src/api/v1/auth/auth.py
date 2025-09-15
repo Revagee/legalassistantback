@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
 import src.schema.auth as schema
-from src.database.utils import get_session
+from src.database.session import get_session
 from src.database.password_resets import PasswordReset
 from src.database.refresh_tokens import RefreshToken
 from src.database.users import User
@@ -34,7 +34,8 @@ async def register(user_data: schema.UserRegisterRequest):
         existing_user = await User.get_by_email(user_data.email.strip(), session)
         if existing_user:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Електронна адреса вже зареєстрована"
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Електронна адреса вже зареєстрована",
             )
 
         # Validate password strength
@@ -69,7 +70,8 @@ async def register(user_data: schema.UserRegisterRequest):
             await session.refresh(user)
         except IntegrityError:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Електронна адреса вже зареєстрована"
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Електронна адреса вже зареєстрована",
             )
 
         # Send verification email
@@ -80,7 +82,9 @@ async def register(user_data: schema.UserRegisterRequest):
         if not email_sent:
             logger.warning(f"Failed to send verification email to {user_data.email}")
 
-        return schema.RegisterResponse(message="Реєстрація успішна. Перевірте електронну пошту та підтвердіть акаунт.",)
+        return schema.RegisterResponse(
+            message="Реєстрація успішна. Перевірте електронну пошту та підтвердіть акаунт.",
+        )
 
 
 @router.post("/login", response_model=schema.TokenResponse)
@@ -146,7 +150,8 @@ async def refresh_token(token_data: schema.RefreshTokenRequest):
         user = await User.get_by_id(refresh_token.user_id, session)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Користувача не знайдено"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Користувача не знайдено",
             )
 
         # Create new access token
@@ -180,7 +185,6 @@ async def logout(
             await RefreshToken.revoke_all_user_tokens(current_user.id, session)
 
         return schema.MessageResponse(message="Logged out successfully")
-        
 
 
 @router.post("/forgot-password", response_model=schema.MessageResponse)
@@ -258,7 +262,8 @@ async def reset_password(request_data: schema.ResetPasswordRequest):
         user = await User.get_by_id(password_reset.user_id, session)
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Користувача не знайдено"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Користувача не знайдено",
             )
 
         # Update password
@@ -339,7 +344,9 @@ async def resend_verification_email(request_data: schema.ResendVerificationReque
                 f"Failed to resend verification email to {request_data.email}"
             )
 
-        return schema.MessageResponse(message="Лист для підтвердження надіслано успішно")
+        return schema.MessageResponse(
+            message="Лист для підтвердження надіслано успішно"
+        )
 
 
 @router.get("/me", response_model=schema.UserResponse)

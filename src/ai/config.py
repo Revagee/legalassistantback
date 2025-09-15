@@ -11,16 +11,16 @@ config = {
         "dimensions": 1536,
     },
     "chat_name": {
-        "provider": "openai",
-        "model": "gpt-4.1-mini",
+        "provider": "google",
+        "model": "gemini-2.5-flash-lite",
         "max_tokens": 30,
         "max_retries": 2,
     },
     "chat": {
-        "provider": "openai",
-        "model": "gpt-4.1-mini",
+        "provider": "google",
+        "model": "gemini-2.5-pro",
         "max_retries": 2,
-    }
+    },
 }
 
 
