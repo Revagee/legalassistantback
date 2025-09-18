@@ -7,7 +7,7 @@ class DatabaseConfig:
 
     @property
     def langchain_connection_string(self):
-        return self.connection_string.replace("postgres", "postgresql+asyncpg")
+        return self.connection_string.replace("postgres", "postgresql+psycopg")
 
 
 db_config = DatabaseConfig()
