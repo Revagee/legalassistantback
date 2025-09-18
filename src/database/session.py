@@ -1,4 +1,3 @@
-import os
 from functools import lru_cache
 
 from sqlalchemy.ext.asyncio import (
@@ -7,12 +6,13 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from src.database.config import db_config
 
 
 @lru_cache
 def get_async_engine(pool_size: int = 10, max_overflow: int = 5) -> AsyncEngine:
     engine = create_async_engine(
-        url=os.getenv("DATABASE_URL", "").replace("postgres", "postgresql+asyncpg"),
+        url=db_config.connection_string.replace("postgres", "postgresql+asyncpg"),
         pool_size=pool_size,
         max_overflow=max_overflow,
     )

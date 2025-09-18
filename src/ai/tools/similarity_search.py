@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_postgres import PGVector
 from src.ai.config import get_embeddings_model
 from functools import lru_cache
-import os
+from src.database.config import db_config
 
 
 SearchType: TypeAlias = Literal["constitution"] #, "laws", "codes", "judicial practice", "all"]
@@ -19,7 +19,7 @@ def get_vector_store(search_source: SearchType) -> PGVector:
     return PGVector(
         embeddings=get_embeddings_model(),
         collection_name=search_source,
-        connection=os.getenv("POSTGRES_CONNECTION_STRING"),
+        connection=db_config.langchain_connection_string,
         use_jsonb=True,
     )
 
@@ -78,7 +78,7 @@ How to call:
 
 
 tool = StructuredTool.from_function(
-    name="similarity_search",
+    name="SearchLegalDocuments",
     description=tool_description,
     coroutine=search_documents,
     args_schema=InputData,

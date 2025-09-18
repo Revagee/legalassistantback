@@ -1,4 +1,3 @@
-import os
 from functools import partial
 from uuid import UUID
 
@@ -17,7 +16,7 @@ from src.ai.agent import GraphBuilder
 from src.schema.chat import ThreadMessagesItemSchema
 from sqlalchemy import select
 from fastapi import Response
-
+from src.database.config import db_config
 router = APIRouter()
 
 
@@ -37,7 +36,7 @@ async def get_thread(
 ):
     config = {"configurable": {"thread_id": str(thread_id), "user_id": str(user.id)}}
     async with AsyncPostgresSaver.from_conn_string(
-        conn_string=os.getenv("DATABASE_URI", ""),
+        conn_string=db_config.connection_string,
     ) as checkpointer:
         graph = GraphBuilder(
             llm=llm,
@@ -75,7 +74,7 @@ async def delete_thread(
     user: User = Depends(get_current_user),
 ):
     async with AsyncPostgresSaver.from_conn_string(
-        conn_string=os.getenv("DATABASE_URI", ""),
+        conn_string=db_config.connection_string,
     ) as checkpointer:
         await checkpointer.adelete_thread(thread_id)
     return []

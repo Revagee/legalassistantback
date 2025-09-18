@@ -17,6 +17,7 @@ from src.ai.agent import GraphBuilder
 from src.schema.chat import ChatRequest
 from fastapi.background import BackgroundTasks
 from src.cache.redis import get_redis
+from src.database.config import db_config
 import logging
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ async def generate_response(
     r = get_redis()
     try:
         async with AsyncPostgresSaver.from_conn_string(
-            conn_string=os.getenv("DATABASE_URI", ""),
+            conn_string=db_config.connection_string,
         ) as checkpointer:
             await checkpointer.setup()
             graph = GraphBuilder(
