@@ -1,6 +1,7 @@
 from langgraph.prebuilt import create_react_agent
 from langmem.short_term import SummarizationNode
-from src.ai.tools import web_search_tool
+from src.ai.tools.web_search import tool as web_search_tool
+from src.ai.tools.similarity_search import tool as similarity_search_tool
 from src.ai.prompt import SYSTEM_PROMPT
 
 
@@ -21,7 +22,7 @@ class GraphBuilder:
         )
         agent = create_react_agent(
             model=self.llm,
-            tools=[web_search_tool],
+            tools=[web_search_tool, similarity_search_tool],
             prompt=SYSTEM_PROMPT,
             pre_model_hook=summarization_node,
             store=self.store,

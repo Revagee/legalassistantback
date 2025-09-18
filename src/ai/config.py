@@ -3,6 +3,7 @@ from functools import lru_cache
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_core.language_models import BaseChatModel
 
 config = {
     "embeddings": {
@@ -21,11 +22,16 @@ config = {
         "model": "gemini-2.5-pro",
         "max_retries": 2,
     },
+    "query_generation": {
+        "provider": "openai",
+        "model": "gpt-4.1-mini",
+        "max_retries": 2,
+    },
 }
 
 
 @lru_cache(maxsize=5)
-def get_llm(purpose: str):
+def get_llm(purpose: str) -> BaseChatModel:
     model_config = config[purpose]
     provider = model_config["provider"]
 
