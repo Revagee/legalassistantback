@@ -40,9 +40,9 @@ def get_retriever(collection_name: SearchType):
         Original question: {question}""",
     )
     llm_chain = QUERY_PROMPT | llm.with_structured_output(QueryGenerationOutput) | RunnableLambda(lambda x: x.queries)
-    retriever = get_vector_store(collection_name)
+    vector_store = get_vector_store(collection_name)
     return MultiQueryRetriever(
-        retriever=retriever,
+        retriever=vector_store.as_retriever(),
         llm_chain=llm_chain,
     )
 
