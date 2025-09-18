@@ -21,6 +21,7 @@ def get_vector_store(search_source: SearchType) -> PGVector:
         collection_name=search_source,
         connection=db_config.langchain_connection_string,
         use_jsonb=True,
+        async_mode=True,
     )
 
 
