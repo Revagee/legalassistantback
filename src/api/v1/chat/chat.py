@@ -1,4 +1,5 @@
 import os
+from time import monotonic
 from datetime import datetime
 from functools import partial
 from typing import AsyncGenerator
@@ -161,7 +162,14 @@ async def stream_tokens(thread_id: UUID):
     message_ended_id = await r.get(f"{STREAM_ID}:message_ended")
 
     async def get_chunks(last_id: str) -> AsyncGenerator[str, None]:
+        last_ping_time = monotonic()
         while True:
+            # Heartbeat ping to keep SSE connection alive
+            current_time = monotonic()
+            if current_time - last_ping_time >= 20:
+                yield ": keepalive\n\n"
+                last_ping_time = current_time
+
             messages = await r.xread(streams={STREAM_ID: last_id}, block=3000)
 
             if not messages:
