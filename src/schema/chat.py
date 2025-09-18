@@ -25,3 +25,8 @@ class ThreadSchema(BaseModel):
     id: UUID
     chat_name: str
     last_activity_time: datetime
+
+
+class ReactionRequest(BaseModel):
+    thread_id: UUID
+    reaction_type: int

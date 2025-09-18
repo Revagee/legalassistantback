@@ -53,6 +53,7 @@ class ChangePasswordRequest(BaseModel):
 class UserResponse(BaseModel):
     name: str
     email: EmailStr
+    plan_id: int
 
 
 class TokenResponse(BaseModel):

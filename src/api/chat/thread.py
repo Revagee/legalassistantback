@@ -17,6 +17,7 @@ from src.schema.chat import ThreadMessagesItemSchema
 from sqlalchemy import select
 from fastapi import Response
 from src.database.config import db_config
+
 router = APIRouter()
 
 

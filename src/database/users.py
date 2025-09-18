@@ -5,7 +5,6 @@ from uuid import UUID
 from sqlalchemy import Boolean, String, and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
-
 from src.database.base import BaseEntity
 
 

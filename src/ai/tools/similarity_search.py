@@ -11,10 +11,12 @@ from functools import lru_cache
 from src.database.config import db_config
 
 
-SearchType: TypeAlias = Literal["constitution"] #, "laws", "codes", "judicial practice", "all"]
+SearchType: TypeAlias = Literal[
+    "constitution"
+]  # , "laws", "codes", "judicial practice", "all"]
 
 
-@lru_cache(maxsize=1) # TODO: increase when we have more collections
+@lru_cache(maxsize=1)  # TODO: increase when we have more collections
 def get_vector_store(search_source: SearchType) -> PGVector:
     return PGVector(
         embeddings=get_embeddings_model(),
@@ -40,7 +42,11 @@ def get_retriever(collection_name: SearchType):
         Provide these alternative questions separated by newlines.
         Original question: {question}""",
     )
-    llm_chain = QUERY_PROMPT | llm.with_structured_output(QueryGenerationOutput) | RunnableLambda(lambda x: x.queries)
+    llm_chain = (
+        QUERY_PROMPT
+        | llm.with_structured_output(QueryGenerationOutput)
+        | RunnableLambda(lambda x: x.queries)
+    )
     vector_store = get_vector_store(collection_name)
     return MultiQueryRetriever(
         retriever=vector_store.as_retriever(),

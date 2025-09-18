@@ -19,7 +19,7 @@ class AuthConfig:
         "JWT_SECRET_KEY", "your-secret-key-change-this-in-production"
     )
     ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+    ACCESS_TOKEN_EXPIRE_HOURS = int(os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "24"))
     REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "30"))
     EMAIL_VERIFICATION_EXPIRE_HOURS = int(
         os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24")
@@ -62,7 +62,7 @@ class TokenService:
     def create_access_token(user_id: UUID, email: str) -> tuple[str, datetime]:
         """Create a JWT access token."""
         expire = datetime.now(UTC) + timedelta(
-            minutes=AuthConfig.ACCESS_TOKEN_EXPIRE_MINUTES
+            hours=AuthConfig.ACCESS_TOKEN_EXPIRE_HOURS
         )
         to_encode = {
             "sub": str(user_id),

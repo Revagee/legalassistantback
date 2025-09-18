@@ -26,6 +26,8 @@ from src.database.base import Base  # noqa: E402
 # Import models so they are registered in Base.metadata
 import src.database.users  # noqa: F401,E402
 import src.database.refresh_tokens  # noqa: F401,E402
+import src.database.checkpointer  # noqa: F401,E402
+import src.database.reactions  # noqa: F401,E402
 import src.database.password_resets  # noqa: F401,E402
 
 target_metadata = Base.metadata

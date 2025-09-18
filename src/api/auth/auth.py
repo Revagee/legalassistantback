@@ -4,14 +4,19 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
+
+from src.database.subscriptions import Subscription
 import src.schema.auth as schema
 from src.database.session import get_session
 from src.database.password_resets import PasswordReset
 from src.database.refresh_tokens import RefreshToken
 from src.database.users import User
+from src.database.plans import SubscriptionPlan
+from src.database.subscriptions import SubscriptionStatus
 from src.middleware.auth_middleware import get_current_user
 from src.services.auth_service import AuthConfig, AuthService, TokenService
 from src.services.email_service import EmailService
+from sqlalchemy import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -90,9 +95,7 @@ async def register(user_data: schema.UserRegisterRequest):
 @router.post("/login", response_model=schema.TokenResponse)
 async def login(user_data: schema.UserLoginRequest):
     """Authenticate user and return tokens."""
-    session = get_session()
-
-    async with session:
+    async with get_session() as session:
         # Authenticate user
         user = await auth_service.authenticate_user(
             user_data.email.strip(), user_data.password, session
@@ -114,15 +117,19 @@ async def login(user_data: schema.UserLoginRequest):
             user, session
         )
 
-        user_response = schema.UserResponse(name=user.name, email=user.email)
+        subscription = await session.scalar(select(Subscription).where(Subscription.user_id == user.id))
+        if not subscription or subscription.status == SubscriptionStatus.FROZEN.value:
+            plan_id = SubscriptionPlan.FREE.value
+        else:
+            plan_id = subscription.plan_id
+
+        user_response = schema.UserResponse(name=user.name, email=user.email, plan_id=plan_id)
 
         return schema.TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
             expires_in=int(
-                timedelta(
-                    minutes=AuthConfig.ACCESS_TOKEN_EXPIRE_MINUTES
-                ).total_seconds()
+                timedelta(hours=AuthConfig.ACCESS_TOKEN_EXPIRE_HOURS).total_seconds()
             ),
             user=user_response,
         )
@@ -160,9 +167,7 @@ async def refresh_token(token_data: schema.RefreshTokenRequest):
         return schema.RefreshTokenResponse(
             access_token=access_token,
             expires_in=int(
-                timedelta(
-                    minutes=AuthConfig.ACCESS_TOKEN_EXPIRE_MINUTES
-                ).total_seconds()
+                timedelta(hours=AuthConfig.ACCESS_TOKEN_EXPIRE_HOURS).total_seconds()
             ),
         )
 
@@ -352,7 +357,13 @@ async def resend_verification_email(request_data: schema.ResendVerificationReque
 @router.get("/me", response_model=schema.UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Get current user information."""
-    return schema.UserResponse(name=current_user.name, email=current_user.email)
+    async with get_session() as session:
+        subscription = await session.scalar(select(Subscription).where(Subscription.user_id == current_user.id))
+        if not subscription or subscription.status == SubscriptionStatus.FROZEN.value:
+            plan_id = SubscriptionPlan.FREE.value
+        else:
+            plan_id = subscription.plan_id
+    return schema.UserResponse(name=current_user.name, email=current_user.email, plan_id=plan_id)
 
 
 @router.post("/change-password", response_model=schema.MessageResponse)

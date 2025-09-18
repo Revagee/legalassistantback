@@ -18,7 +18,9 @@ router = APIRouter()
     description="Get list of all user's threads.",
     response_model=list[ThreadSchema],
 )
-async def get_threads(user: User = Depends(get_current_user),):
+async def get_threads(
+    user: User = Depends(get_current_user),
+):
     async with get_session() as session:
         checkpoints = await session.scalars(
             select(Checkpoint)

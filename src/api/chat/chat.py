@@ -15,11 +15,15 @@ from src.middleware.auth_middleware import get_current_user
 
 from src.database.users import User
 from src.ai.agent import GraphBuilder
-from src.schema.chat import ChatRequest
+from src.schema.chat import ChatRequest, ReactionRequest
 from fastapi.background import BackgroundTasks
 from src.cache.redis import get_redis
 from src.database.config import db_config
+from src.database.session import get_session
+from sqlalchemy import select
+
 import logging
+from src.database.reactions import Reaction
 
 logger = logging.getLogger(__name__)
 
@@ -91,11 +95,15 @@ async def generate_response(
                             )
 
                 # Message ended
-                if chunk.response_metadata and chunk.response_metadata.get("finish_reason"):
+                if chunk.response_metadata and chunk.response_metadata.get(
+                    "finish_reason"
+                ):
                     msg_id = await r.xadd(
                         stream_id, {"event": "system", "data": "message_ended"}
                     )
-                    await r.set(f"{stream_id}:message_ended", msg_id, ex=STREAM_TTL_SECONDS)
+                    await r.set(
+                        f"{stream_id}:message_ended", msg_id, ex=STREAM_TTL_SECONDS
+                    )
 
                 # Touch TTLs for active stream
                 await r.expire(thread_id, STREAM_TTL_SECONDS)
@@ -198,3 +206,28 @@ async def stream_tokens(thread_id: UUID):
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.post("/reaction")
+async def add_reaction(
+    request: ReactionRequest, user: User = Depends(get_current_user)
+):
+    async with get_session() as session:
+        thread_id = str(request.thread_id)
+        db_reaction = await session.scalar(
+            select(Reaction).where(Reaction.thread_id == thread_id)
+        )
+        if db_reaction:
+            if request.reaction_type == 1:
+                db_reaction.likes += 1
+            else:
+                db_reaction.dislikes += 1
+        else:
+            db_reaction = Reaction(
+                thread_id=thread_id,
+                likes=1 if request.reaction_type == 1 else 0,
+                dislikes=1 if request.reaction_type == 0 else 0,
+            )
+        session.add(db_reaction)
+        await session.commit()
+    return Response(status_code=204)
