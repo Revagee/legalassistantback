@@ -51,7 +51,7 @@ async def create_subscription(
 
         payload = {
             "action": "subscribe",
-            "version": "7",
+            "version": "3",
             "phone": request.phone,
             "amount": plan.amount,
             "currency": plan.currency,
