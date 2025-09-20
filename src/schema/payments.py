@@ -13,7 +13,7 @@ class SubscriptionRequest(BaseModel):
 
 
 class CallbackRequest(BaseModel):
-    data: dict[str, str]
+    data: str  # base64-encoded JSON string from LiqPay
     signature: str
 
 

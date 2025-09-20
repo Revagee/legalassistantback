@@ -1,4 +1,4 @@
-from src.database.base import BaseEntityWithIntId
+from src.database.base import BaseWithTimestamps
 from sqlalchemy import String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import ForeignKey
@@ -13,9 +13,10 @@ class SubscriptionStatus(StrEnum):
     FROZEN = "frozen"
 
 
-class Subscription(BaseEntityWithIntId):
+class Subscription(BaseWithTimestamps):
     __tablename__ = "subscriptions"
 
+    id: Mapped[UUID] = mapped_column(init=True, primary_key=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     plan_id: Mapped[int] = mapped_column(ForeignKey("plans.id"), nullable=False)
     status: Mapped[str] = mapped_column(String(255), nullable=False) # active, cancelled, pending

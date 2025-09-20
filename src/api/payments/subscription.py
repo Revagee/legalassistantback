@@ -69,7 +69,6 @@ async def create_subscription(
 
         res = await liqpay_request(payload)
         if res["status"] != "subscribed":
-            return res
             return Response(status_code=400, content="Оплата не успішна")
 
         # Add subscription
@@ -97,8 +96,7 @@ async def create_subscription(
         session.add(subscription)
         await session.commit()
 
-    return res
-    # return UserResponse(name=user.name, email=user.email, plan_id=plan.id)
+    return UserResponse(name=user.name, email=user.email, plan_id=plan.id)
 
 
 @router.post("/cancel")
@@ -112,8 +110,8 @@ async def cancel_subscription(user: User = Depends(get_current_user)):
 
         payload = {
             "action": "unsubscribe",
-            "version": "7",
-            "order_id": subscription.id,
+            "version": "3",
+            "order_id": str(subscription.id),
         }
         res = await liqpay_request(payload)
 
@@ -123,7 +121,7 @@ async def cancel_subscription(user: User = Depends(get_current_user)):
         subscription.status = SubscriptionStatus.CANCELLED.value
         await session.commit()
 
-    return res
+    return Response(status_code=204, content="OK")
 
 
 @router.post("/callback")
